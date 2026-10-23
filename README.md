@@ -1,2 +1,0 @@
-# Evolution
-My Discord Bot
