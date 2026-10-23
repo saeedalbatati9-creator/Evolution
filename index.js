@@ -60,11 +60,11 @@ function buildAvatarMessage(imageUrl, titleText) {
     new ButtonBuilder()
       .setStyle(ButtonStyle.Link)
       .setURL(imageUrl)
-      .setEmoji(DOWNLOAD_EMOJI_ID), // إيموجي التحميل
+      .setEmoji(DOWNLOAD_EMOJI_ID),
     new ButtonBuilder()
       .setCustomId('delete_avatar_msg')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji(DELETE_EMOJI_ID) // إيموجي الحذف
+      .setEmoji(DELETE_EMOJI_ID)
   );
 
   return { embeds: [embed], components: [row] };
@@ -91,7 +91,6 @@ client.on('messageCreate', async (message) => {
   let targetChannelId = null;
   let categoryTitle = '';
 
-  // تحديد نوع الصور والمستهدف بناءً على الروم الذي أرسلت فيه
   if (message.channel.id === BOYS_SOURCE_ID) {
     targetChannelId = BOYS_TARGET_ID;
     categoryTitle = 'أفتار اولاد جديد';
@@ -103,5 +102,45 @@ client.on('messageCreate', async (message) => {
     categoryTitle = 'أفتار أنمي جديد';
   }
 
-  // إذا لم تكن الرسالة في أحد رومات المصدر المحددة، يتجاهلها البوت
   if (!targetChannelId) return;
+
+  let imageUrl = null;
+
+  if (message.attachments.size > 0) {
+    const attachment = message.attachments.first();
+    if (attachment.contentType && attachment.contentType.startsWith('image/')) {
+      imageUrl = attachment.url;
+    }
+  } else if (message.content.startsWith('http://') || message.content.startsWith('https://')) {
+    imageUrl = message.content;
+  }
+
+  if (!imageUrl) return;
+
+  try {
+    await message.delete().catch(() => {});
+
+    const targetChannel = message.guild.channels.cache.get(targetChannelId);
+    if (targetChannel) {
+      await targetChannel.send(buildAvatarMessage(imageUrl, categoryTitle));
+    }
+  } catch (error) {
+    console.error('❌ حدث خطأ أثناء نقل الصورة:', error);
+  }
+});
+
+// ----------------------------------------------------
+// 6. التفاعل مع زر حذف الصورة (للإدارة)
+// ----------------------------------------------------
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isButton()) return;
+
+  if (interaction.customId === 'delete_avatar_msg') {
+    if (!interaction.member.permissions.has('ManageMessages')) {
+      return interaction.reply({ content: '❌ ليس لديك صلاحية حذف الصورة.', ephemeral: true });
+    }
+    await interaction.message.delete().catch(() => {});
+  }
+});
+
+client.login(process.env.TOKEN);
