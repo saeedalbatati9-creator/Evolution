@@ -27,27 +27,23 @@ app.get('/', (req, res) => res.send('Ovia Profile Bot is Online 24/7!'));
 app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 
 // ----------------------------------------------------
-// 2. معرّفات (IDs) الرومات والإيموجيات
+// 2. معرّفات (IDs) الرومات
 // ----------------------------------------------------
 
 // إعدادات رومات الأولاد
-const BOYS_SOURCE_ID = '1563004979000639523';
+const BOYS_SOURCE_ID = '1563276569173033022';
 const BOYS_TARGET_ID = '1563007615212986398';
 
 // إعدادات رومات البنات
-const GIRLS_SOURCE_ID = '1563004979000639523';
+const GIRLS_SOURCE_ID = '1563276569173033022';
 const GIRLS_TARGET_ID = '1563007665930506250';
 
 // إعدادات رومات الأنمي
-const ANIME_SOURCE_ID = '1563004979000639523';
+const ANIME_SOURCE_ID = '1563276569173033022';
 const ANIME_TARGET_ID = '1563007685476094203';
 
-// IDs الإيموجيات الخاصة بك للأزرار
-const DOWNLOAD_EMOJI_ID = '<:ovia:1563005960535146636>'; 
-const DELETE_EMOJI_ID   = '<:emoji_1792345299337:1563012182629818408>'; 
-
 // ----------------------------------------------------
-// 3. دالة بناء وتنسيق رسالة الصورة بالأزرار والإيموجيات
+// 3. دالة بناء وتنسيق رسالة الصورة
 // ----------------------------------------------------
 function buildAvatarMessage(imageUrl, titleText) {
   const embed = new EmbedBuilder()
@@ -60,11 +56,11 @@ function buildAvatarMessage(imageUrl, titleText) {
     new ButtonBuilder()
       .setStyle(ButtonStyle.Link)
       .setURL(imageUrl)
-      .setEmoji(DOWNLOAD_EMOJI_ID),
+      .setLabel('<:ovia:1563005960535146636>'),
     new ButtonBuilder()
       .setCustomId('delete_avatar_msg')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji(DELETE_EMOJI_ID)
+      .setEmoji('<:emoji_1792345299337:1563012182629818408>')
   );
 
   return { embeds: [embed], components: [row] };
@@ -77,7 +73,7 @@ client.once('ready', async () => {
   console.log(`🟢 تم تشغيل Ovia Profile بنجاح: ${client.user.tag}`);
 
   client.user.setPresence({
-    activities: [{ name: 'Ovia Profile | Avatars', type: ActivityType.Playing }],
+    activities: [{ name: 'Dev My | Never', type: ActivityType.Playing }],
     status: 'online'
   });
 });
@@ -118,11 +114,14 @@ client.on('messageCreate', async (message) => {
   if (!imageUrl) return;
 
   try {
-    await message.delete().catch(() => {});
+    // جلب الروم الهدف أولاً والتأكد من وجوده
+    const targetChannel = await client.channels.fetch(targetChannelId).catch(() => null);
 
-    const targetChannel = message.guild.channels.cache.get(targetChannelId);
     if (targetChannel) {
       await targetChannel.send(buildAvatarMessage(imageUrl, categoryTitle));
+      await message.delete().catch(() => {});
+    } else {
+      console.error(`❌ لم يتم العثور على الروم الهدف: ${targetChannelId}`);
     }
   } catch (error) {
     console.error('❌ حدث خطأ أثناء نقل الصورة:', error);
